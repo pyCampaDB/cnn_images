@@ -4,11 +4,14 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-tensorflow = "*"
 matplotlib = "*"
 python-dotenv = "*"
+scipy = "*"
+verbose = "*"
+tensorflow = "*"
 
 [dev-packages]
+ipykernel = "*"
 
 [requires]
 python_version = "3.11"

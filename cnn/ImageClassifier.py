@@ -1,8 +1,27 @@
-#from tensorflow import 
-from tensorflow.keras import datasets, layers, models, losses
-from matplotlib.pyplot import (subplot, xticks, yticks, cm, imshow as pltImshow, 
+#from tensorflow import
+from tensorflow.keras import datasets, models, losses
+from tensorflow.keras.layers import Conv2D, BatchNormalization, MaxPooling2D, Flatten, Dense, Dropout
+from matplotlib.pyplot import (subplot, xticks, yticks, cm, imshow as pltImshow,
                                show as pltShow, figure, grid, xlabel)
 from numpy import argmax as npArgmax
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import EarlyStopping, LearningRateScheduler
+from tensorflow.keras.regularizers import L2
+from tensorflow.math import exp as tfExp
+
+
+
+def scheduler(epoch, lr):
+    if epoch < 10:
+        return float(lr)
+    else:
+        return float(lr * tfExp(-0.1))
+lr_scheduler = LearningRateScheduler(scheduler)
+
+
+early_stopping = EarlyStopping(monitor='val_loss',
+                               patience=10,
+                               restore_best_weights=True)
 
 # Cargar y dividir el dataset CIFAR-10
 (train_images, train_labels), (test_images,
@@ -13,24 +32,40 @@ train_images, test_images = train_images / 255.0, test_images / 255.0
 
 # Definir la arquitectura de la red neuronal convolucional
 model = models.Sequential([
-    layers.Conv2D(32, (3, 3), activation='relu', input_shape=(32, 32, 3)),
-    layers.MaxPooling2D((2, 2)),
-    layers.Conv2D(64, (3, 3), activation='relu'),
-    layers.MaxPooling2D((2, 2)),
-    layers.Conv2D(64, (3, 3), activation='relu'),
-    layers.Flatten(),
-    layers.Dense(64, activation='relu'),
-    layers.Dense(10)
+    Conv2D(32,
+          (3, 3),
+           activation='relu',
+           input_shape=(32, 32, 3)),
+    BatchNormalization(),
+    Conv2D(32, (3, 3), activation='relu', kernel_regularizer=L2(0.001)),
+    MaxPooling2D((2, 2)),
+    Dropout(0.25),
+
+    Conv2D(64, (3, 3), activation='relu'),
+    BatchNormalization(),
+    Conv2D(64, (3, 3), activation='relu', kernel_regularizer=L2(0.001)),
+    MaxPooling2D((2, 2)),
+    Dropout(0.25),
+
+    Flatten(),
+    Dense(512, activation='relu'),
+    Dropout(0.5),
+    Dense(10, activation='softmax', kernel_regularizer=L2(0.001))
 ])
 
 # Compilar el modelo
-model.compile(optimizer='adam',
+optimizer = Adam(learning_rate=0.001)
+model.compile(optimizer=optimizer,
               loss=losses.SparseCategoricalCrossentropy(
                   from_logits=True),
               metrics=['accuracy'])
 
 # Entrenar el modelo
-model.fit(train_images, train_labels, epochs=10)
+model.fit(train_images,
+          train_labels,
+          epochs=200,
+          validation_data=(test_images, test_labels),
+          callbacks=[early_stopping, lr_scheduler])
 
 # Evaluar la precisión del modelo en el conjunto de prueba
 test_loss, test_acc = model.evaluate(test_images, test_labels)
