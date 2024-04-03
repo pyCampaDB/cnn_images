@@ -4,7 +4,7 @@ from tensorflow.keras.layers import Conv2D, BatchNormalization, MaxPooling2D, Fl
 from matplotlib.pyplot import (subplot, xticks, yticks, cm, imshow as pltImshow,
                                show as pltShow, figure, grid, xlabel)
 from numpy import argmax as npArgmax
-from tensorflow.keras.optimizers import Adam
+#from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping, LearningRateScheduler
 from tensorflow.keras.regularizers import L2
 from tensorflow.math import exp as tfExp
@@ -54,10 +54,10 @@ model = models.Sequential([
 ])
 
 # Compilar el modelo
-optimizer = Adam(learning_rate=0.001)
-model.compile(optimizer=optimizer,
+#optimizer = Adam(learning_rate=0.001)
+model.compile(optimizer='adam',#optimizer,
               loss=losses.SparseCategoricalCrossentropy(
-                  from_logits=True),
+                  from_logits=False),
               metrics=['accuracy'])
 
 # Entrenar el modelo
