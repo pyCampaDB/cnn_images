@@ -14,6 +14,7 @@ COPY Pipfile Pipfile.lock /app/
 #Installing depends in the system
 RUN pipenv install --system --deploy
 
+#Install Jupyter
 RUN pip install jupyter ipykernel
 
 #Copy all the files

@@ -1,7 +1,7 @@
 from subprocess import check_call, CalledProcessError, run as runSubprocess, check_output
-from os.path import exists
+from os.path import exists, join
 from os import getenv, getcwd
-from pkg_resources import  VersionConflict, DistributionNotFound
+from pkg_resources import require, VersionConflict, DistributionNotFound
 #from getpass import getpass
 
 
@@ -29,8 +29,6 @@ def check_package_installed(package):
         return True
     except CalledProcessError:
         return False
-
-
 #Function to install a single package using pipenv
 def install_package_with_pipenv(package):
     b = check_package_installed(package)
@@ -55,18 +53,33 @@ def install_package_with_pipenv(package):
         except CalledProcessError as cp:
             print(f"\nAn error occurred: {cp.returncode}\n")
 
-#Function to install all packages from a requirements.txt file using pipenv
+#Function to install all packages from a requirements.txt file using pipveng
 def install_packages_from_file_with_pipenv(file):
-    with open (f'{getcwd()}\\{file}.txt', 'r') as myFile:
+    file_path = join(getcwd(), f"{file}.txt")
+    with open (f'{file_path}', 'r') as myFile:
         for package in myFile.readlines():
             install_package_with_pipenv(package.strip())
-
         myFile.close()
-    
+
+def check_packages_installed():
+    try:
+        runSubprocess('pipenv graph', shell=True, check=True)
+    except CalledProcessError as e:
+        print(f'An error ocurred: {e.stderr.decode()}')
+
+
+def delete_pipenv():
+    try:
+        runSubprocess('pipenv --rm', shell=True, check=True)
+        runSubprocess('del Pipfile', shell=True, check=True)
+        runSubprocess('del Pipfile.lock', shell=True, check=True)
+    except CalledProcessError as e:
+        print(f'An error ocurred: {e.stderr.decode()}')
+
 
 def run_script(file):
     try:
-        runSubprocess(f'pipenv run python {file}.py', shell=True, check=True)
+        runSubprocess(['pipenv', 'run', 'python', f'{file}.py'])
     except CalledProcessError as e:
         print(f'An error occurred: {e.stderr.decode()}')
 
@@ -92,6 +105,7 @@ COPY Pipfile Pipfile.lock /app/
 #Installing depends in the system
 RUN pipenv install --system --deploy
 
+#Install Jupyter
 RUN pip install jupyter ipykernel
 
 #Copy all the files
@@ -139,8 +153,6 @@ def upload_github():
         commit = input('Enter commit message: ')
         runSubprocess(f'git commit -m "{commit}"', shell=True, check=True)
 
-        print('\ngit branch\n')
-        runSubprocess('git branch -M main', shell=True, check=True)
         first_upload = ''
         while first_upload not in ['Y', 'y', 'N', 'n']:
             first_upload = input('Enter if it is your first commit [Y/N]: ')
@@ -148,14 +160,13 @@ def upload_github():
                 print('\nInvalid option\n')
         
         if first_upload in ['Y', 'y']:
+            print('\ngit branch\n')
+            runSubprocess('git branch -M main', shell=True, check=True)
             my_git = input('Enter repository name: ')
             print('\nremote add origin\n')
-            #
             runSubprocess(f'git remote add origin https://github.com/pyCampaDB/{my_git}.git',
                 shell=True, check=True, capture_output=True)
-        else:
-            print('\npull\n')
-            runSubprocess('git pull origin main', shell=True, check=True)
+
         print('\npush\n')
         runSubprocess(f'git push -u origin main', shell=True, check=True)
         print('\nProject uploaded to GitHub\n')
@@ -165,34 +176,41 @@ def upload_github():
         print(f'Exeption: {e}')
 
 
-def run():
-    ensure_pipenv_installed()
-    manage_and_use_env()
-    option = '3'
-    while option not in ['1', '2']:
-        option = input('\n1. Run script'
-                       '\n2. Settings pipenv'
-                       '\nEnter your choice: ')
-        if option not in ['1', '2']:
-            print('\ninvalid option\n')
-    if option == '2':
-        menu = '1'
-        while menu in ['1', '2']:
-            menu = input('\n1. Install an only package'
-                         '\n2. Install all packages written in the file'
-                         '\n(Other). Exit setting pipenv and run script'
-                         '\nEnter your choice: ')
-            if menu=='1':
-                package = input('\nEnter package name: ')
-                install_package_with_pipenv(package)
-            elif menu=='2':
-                file = input('\nEnter the file name: ')
-                install_packages_from_file_with_pipenv(file)
 
-    file = input('\nEnter file name: ')
+def run():
     from dotenv import load_dotenv
     load_dotenv()
-    run_script(file)
+    ensure_pipenv_installed()
+    manage_and_use_env()
+    option = '2'
+    while option in ['1', '2']:
+        option = input('\n1. Run script'
+                       '\n2. Settings pipenv'
+                       '\n(Other) Exit\n'
+                       '\nEnter your choice: ')
+
+        if option == '2':
+            menu = '1'
+            while menu in ['1', '2', '3', '4']:
+                menu = input('\n1. Install an only package'
+                            '\n2. Install all packages written in the file'
+                            '\n3. Check your packages already installed'
+                            '\n4. Restart your virtual environment'
+                            '\n(Other). Exit pipenv settings\n'
+                            '\nEnter your choice: ')
+                if menu=='1':
+                    package = input('\nEnter package name: ')
+                    install_package_with_pipenv(package)
+                elif menu=='2':
+                    file = input('\nEnter the file name: ')
+                    install_packages_from_file_with_pipenv(file)
+                elif menu=='3': check_packages_installed()
+                elif menu=='4': 
+                    delete_pipenv()
+                    manage_and_use_env()
+        elif option == '1':
+            file = input('\nEnter file name: ')
+            run_script(file)
 
     docker_option = '9'
     while docker_option not in ['Y', 'y', 'N', 'n']:
@@ -217,4 +235,5 @@ def run():
 ############################################# MAIN ##########################################################################
 if __name__ == '__main__':
     run()
+
 
