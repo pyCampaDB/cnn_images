@@ -93,7 +93,7 @@ def delete_pipenv():
 
 def run_script():
     try:
-        runSubprocess(f'python {input("Enter the file name: ")}.py',
+        runSubprocess(f'pipenv run python {input("Enter the file name: ")}.py',
                       shell=True, check=True)
     except CalledProcessError as cp:
         print(f'An error ocurred: {cp.returncode}')
@@ -190,7 +190,7 @@ def upload_github():
 
 
 def cmd():
-    command = input('CMD: ')
+    command = input(f'{getcwd()}: ')
     try:
         runSubprocess(command, shell=True, check=True)
     except CalledProcessError as cp:
