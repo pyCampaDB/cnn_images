@@ -72,14 +72,14 @@ def uninstall_package():
     try:
         runSubprocess(f'pipenv uninstall {package}', shell=True, check=True)
     except CalledProcessError as cp:
-        print(f'An error ocurred: {cp.returncode}')
+        print(f'An error occurred: {cp.returncode}')
 
 
 def check_packages_installed():
     try:
         runSubprocess('pipenv graph', shell=True, check=True)
     except CalledProcessError as e:
-        print(f'An error ocurred: {e.returncode}')
+        print(f'An error occurred: {e.returncode}')
 
 
 def delete_pipenv():
@@ -88,15 +88,21 @@ def delete_pipenv():
         runSubprocess('del Pipfile', shell=True, check=True)
         runSubprocess('del Pipfile.lock', shell=True, check=True)
     except CalledProcessError as e:
-        print(f'An error ocurred: {e.returncode}')
+        print(f'An error occurred: {e.returncode}')
 
+def pipenv_run():
+    opt = input('pipenv run [your command]. [your command] = ')
 
+    try:
+        runSubprocess(f'pipenv run {opt}', shell=True, check=True)
+    except CalledProcessError as e:
+        print(f'An error occurred: {e.returncode}')
 def run_script():
     try:
         runSubprocess(f'pipenv run python {input("Enter the file name: ")}.py',
                       shell=True, check=True)
     except CalledProcessError as cp:
-        print(f'An error ocurred: {cp.returncode}')
+        print(f'An error occurred: {cp.returncode}')
 
 
 def upload_docker():
@@ -194,7 +200,7 @@ def cmd():
     try:
         runSubprocess(command, shell=True, check=True)
     except CalledProcessError as cp:
-        print(f'An error ocurred: {cp.returncode}')
+        print(f'An error occurred: {cp.returncode}')
     finally:
         return command
 
@@ -205,13 +211,15 @@ def run():
     manage_and_use_env()
     option = '1'
     while option in ['1', '2', '3', '4', '5']:
-        option = input('\n1. CMD'
+
+        option = input( '\n1. CMD'
                         '\n2. Run Script'
-                       '\n3. Settings pipenv'
-                       '\n4. Upload project to Docker Hub'
-                       '\n5. Upload project to GitHub'
-                       '\n(Other). Exit\n'
-                       '\nEnter your choice: ')
+                        '\n3. Settings pipenv'
+                        '\n4. Upload project to Docker Hub'
+                        '\n5. Upload project to GitHub'
+                        '\n(Other). Exit\n'
+                        '\nEnter your choice: ')
+
         if option == '1':
             try:
                 while True:
@@ -225,15 +233,18 @@ def run():
 
         elif option == '3':
             menu = '1'
-            while menu in ['1', '2', '3', '4', '5']:
+            while menu in ['1', '2', '3', '4', '5', '6']:
+
                 menu = input('\n*********************************** PIPENV SETTINGS ***********************************\n\n'
-                            '\n1. Install an only package'
-                            '\n2. Install all packages written in the file'
-                            '\n3. Check your packages already installed'
-                            '\n4. Uninstall a package'
-                            '\n5. Restart your virtual environment'
-                            '\n(Other). Exit\n'
-                            '\nEnter your choice: ')
+                             '\n1. Install an only package'
+                             '\n2. Install all packages written in the file'
+                             '\n3. Check your packages already installed'
+                             '\n4. Uninstall a package'
+                             '\n5. Restart your virtual environment'
+                             '\n6. Execute your pipenv command'
+                             '\n(Other). Exit\n'
+                             '\nEnter your choice: ')
+                
                 if menu=='1':
                     package = input('\nEnter package name: ')
                     install_package_with_pipenv(package)
@@ -245,6 +256,7 @@ def run():
                 elif menu=='5':
                     delete_pipenv()
                     manage_and_use_env()
+                elif menu=='6': pipenv_run()
             print('\n***************************************** EXIT DJANGO SETTINGS *****************************************\n')
         
     
@@ -265,7 +277,6 @@ def run():
                     print('\nDocker pass...\n')
 
             elif option == '5':
-
                 git_option = '9'
                 while git_option not in ['Y', 'y', 'N', 'n']:
                     git_option = input('Do you want to upload this project to GitHub? [Y/N]: ')
