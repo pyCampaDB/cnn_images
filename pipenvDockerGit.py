@@ -59,8 +59,8 @@ def install_package_with_pipenv(package):
             print(f"\nAn error occurred: {cp.returncode}\n")
 
 #Function to install all packages from a requirements.txt file using pipveng
-def install_packages_from_file_with_pipenv(file):
-    with open (f'{getcwd()}\\{file}.txt', 'r') as myFile:
+def install_packages_from_file_with_pipenv():
+    with open (f'{getcwd()}\\requirements.txt', 'r') as myFile:
         for package in myFile.readlines():
             install_package_with_pipenv(package.strip())
 
@@ -109,7 +109,7 @@ def upload_docker():
     username = getenv('DOCKER_USERNAME', default='default_username')
     pwd = getenv('DOCKER_PASSWORD', default='default_password')
     try:
-        runSubprocess(['docker', 'login', '--username', username, '--password', pwd], check=True)
+        runSubprocess(['pipenv','run','docker', 'login', '--username', username, '--password', pwd], check=True)
 
         dockerfile_contents = f"""
 #Use the official image of Python
@@ -144,9 +144,9 @@ CMD pipenv run python pipenvDockerGit.py
             file.write(dockerfile_contents)
             file.close()
         print('\nBuilding image...\n')
-        runSubprocess(f'docker build -t {image_name}:latest .', shell=True, check=True)
+        runSubprocess(f'pipenv run docker build -t {image_name}:latest .', shell=True, check=True)
         print('\nImage built.\n')
-        runSubprocess(f'docker push {image_name}', shell=True, check=True)
+        runSubprocess(f'pipenv run docker push {image_name}', shell=True, check=True)
         print('\nImage uploaded to DockerHub.\n')
 
 
@@ -154,6 +154,48 @@ CMD pipenv run python pipenvDockerGit.py
         print(f'CalledProcessError: {cp.returncode}')
     except Exception as e:
         print(f'Exception: {e.__str__}')
+
+def run_container_docker():
+    ports = input('ports: ')
+    name_container = input('container: ')
+    name_img = input('image: ')
+    try:
+        runSubprocess(f'pipenv run docker run -p {ports} --name {name_container} {name_img}')
+    except CalledProcessError as cp:
+        print(f'An error occurred: {cp.returncode}')
+
+def docker_start():
+    container = input('name container: ')
+    try:
+        runSubprocess(f'pipenv run docker start {container}', shell=True, check=True)
+    except CalledProcessError as cp:
+        print(f'An error occurred: {cp.returncode}')
+
+def docker_stop():
+    container = input('name container: ')
+    try:
+        runSubprocess(f'pipenv run docker stop {container}', shell=True, check=True)
+    except CalledProcessError as cp:
+        print(f'An error occurred: {cp.returncode}')
+
+def docker_restart():
+    container = input('name container: ')
+    try:
+        runSubprocess(f'pipenv run docker restart {container}', shell=True, check=True)
+    except CalledProcessError as cp:
+        print(f'An error occurred: {cp.returncode}')
+
+def docker_ps():
+    try:
+        runSubprocess('pipenv run docker ps', shell=True, check=True)
+    except CalledProcessError as cp:
+        print(f'An error occurred: {cp.returncode}')
+
+def docker_ps_a():
+    try:
+        runSubprocess('pipenv run docker ps -a', shell=True, check=True)
+    except CalledProcessError as cp:
+        print(f'An error occurred: {cp.returncode}')
 
 def upload_github():
     try:
@@ -215,7 +257,7 @@ def run():
         option = input( '\n1. CMD'
                         '\n2. Run Script'
                         '\n3. Settings pipenv'
-                        '\n4. Upload project to Docker Hub'
+                        '\n4. Docker'
                         '\n5. Upload project to GitHub'
                         '\n(Other). Exit\n'
                         '\nEnter your choice: ')
@@ -237,7 +279,7 @@ def run():
 
                 menu = input('\n*********************************** PIPENV SETTINGS ***********************************\n\n'
                              '\n1. Install an only package'
-                             '\n2. Install all packages written in the file'
+                             '\n2. Install all packages written in requirements.txt'
                              '\n3. Check your packages already installed'
                              '\n4. Uninstall a package'
                              '\n5. Restart your virtual environment'
@@ -249,8 +291,7 @@ def run():
                     package = input('\nEnter package name: ')
                     install_package_with_pipenv(package)
                 elif menu=='2':
-                    file = input('\nEnter the file name: ')
-                    install_packages_from_file_with_pipenv(file)
+                    install_packages_from_file_with_pipenv()
                 elif menu=='3':check_packages_installed()
                 elif menu=='4':uninstall_package()
                 elif menu=='5':
@@ -266,15 +307,27 @@ def run():
             load_dotenv()
             
             if option == '4':
-                docker_option = '9'
-                while docker_option not in ['Y', 'y', 'N', 'n']:
-                    docker_option = input('Do you want to upload this project to Docker? [Y/N]: ')
-                    if docker_option not in ['Y', 'y', 'N', 'n']:
-                        print('\nInvalid option\n')
-                if docker_option in ['Y', 'y']:
-                    upload_docker()
-                else:
-                    print('\nDocker pass...\n')
+                docker_option = '1'
+                while docker_option in ['1', '2', '3', '4', '5', '6', '7']:
+                    docker_option = input('\n******************** DOCKER: ********************\n'
+                                          '1. Upload an image to Docker Hub\n'
+                                          '2. Run a docker container\n'
+                                          '3. Start docker container\n'
+                                          '4. Stop docker container\n'
+                                          '5. Restart docker contaienr\n'
+                                          '6. Show the containers executing\n'
+                                          '7. Show all containers\n'
+                                          '(Other) Exit Docker\n\n'
+                                          'Enter your choice: ')
+                    if docker_option == '1':upload_docker()
+                    elif docker_option == '2': run_container_docker()
+                    elif docker_option=='3': docker_start()
+                    elif docker_option=='4': docker_stop()
+                    elif docker_option=='5': docker_restart()
+                    elif docker_option=='6': docker_ps()
+                    elif docker_option=='7': docker_ps_a()
+                    else: print('\n******************** EXIT DOCKER ********************\n')
+                
 
             elif option == '5':
                 git_option = '9'
