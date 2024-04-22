@@ -7,7 +7,7 @@ from signal import signal, SIGINT
 
 
 #########################################################################################################################################3
-# evita salir del script al ejecutar Ctrl+C
+# avoid exiting the script when executing Ctrl+C
 def signal_handler(sign, frame):
     print('Ctrl+C pressed')
 
@@ -60,7 +60,12 @@ def install_package_with_pipenv(package):
 
 #Function to install all packages from a requirements.txt file using pipveng
 def install_packages_from_file_with_pipenv():
-    with open (f'{getcwd()}\\requirements.txt', 'r') as myFile:
+    if exists('requirements.txt'):
+        req = 'requirements.txt'
+    else:
+        req = input('Enter the name file: ')
+    
+    with open (f'{getcwd()}\\{req}', 'r') as myFile:
         for package in myFile.readlines():
             install_package_with_pipenv(package.strip())
 
@@ -97,6 +102,8 @@ def pipenv_run():
         runSubprocess(f'pipenv run {opt}', shell=True, check=True)
     except CalledProcessError as e:
         print(f'An error occurred: {e.returncode}')
+
+
 def run_script():
     try:
         runSubprocess(f'pipenv run python {input("Enter the file name: ")}.py',
@@ -108,6 +115,7 @@ def run_script():
 def upload_docker():
     username = getenv('DOCKER_USERNAME', default='default_username')
     pwd = getenv('DOCKER_PASSWORD', default='default_password')
+   
     try:
         runSubprocess(['pipenv','run','docker', 'login', '--username', username, '--password', pwd], check=True)
 
@@ -126,6 +134,7 @@ COPY Pipfile Pipfile.lock /app/
 
 #Installing depends in the system
 RUN pipenv install --system --deploy
+
 
 #Copy all the files
 COPY . /app
@@ -160,82 +169,424 @@ def run_container_docker():
     name_container = input('container: ')
     name_img = input('image: ')
     try:
-        runSubprocess(f'pipenv run docker run -p {ports} --name {name_container} {name_img}')
+        runSubprocess('pipenv run docker'
+                      f' run -p {ports} --name'
+                      f' {name_container} {name_img}',
+                      shell=True, check=True)
     except CalledProcessError as cp:
         print(f'An error occurred: {cp.returncode}')
 
 def docker_start():
     container = input('name container: ')
     try:
-        runSubprocess(f'pipenv run docker start {container}', shell=True, check=True)
+        runSubprocess('pipenv run docker '
+                      f'start {container}', 
+                      shell=True, 
+                      check=True)
     except CalledProcessError as cp:
         print(f'An error occurred: {cp.returncode}')
 
 def docker_stop():
     container = input('name container: ')
     try:
-        runSubprocess(f'pipenv run docker stop {container}', shell=True, check=True)
+        runSubprocess('pipenv run docker stop'
+                      f' {container}', 
+                      shell=True, check=True)
     except CalledProcessError as cp:
         print(f'An error occurred: {cp.returncode}')
 
 def docker_restart():
     container = input('name container: ')
     try:
-        runSubprocess(f'pipenv run docker restart {container}', shell=True, check=True)
+        runSubprocess(f'pipenv run docker restart {container}', 
+                      shell=True, check=True)
     except CalledProcessError as cp:
         print(f'An error occurred: {cp.returncode}')
 
 def docker_ps():
     try:
-        runSubprocess('pipenv run docker ps', shell=True, check=True)
+        runSubprocess('pipenv run docker ps', 
+                      shell=True, check=True)
     except CalledProcessError as cp:
         print(f'An error occurred: {cp.returncode}')
 
 def docker_ps_a():
     try:
-        runSubprocess('pipenv run docker ps -a', shell=True, check=True)
+        runSubprocess('pipenv run docker ps -a', 
+                      shell=True, check=True)
     except CalledProcessError as cp:
         print(f'An error occurred: {cp.returncode}')
+
+def remove_image():
+    img = input(
+        '\nEnter the ID of the image: '
+    )
+    try:
+        runSubprocess(f'pipenv run docker rmi {img}', 
+                      shell=True, check=True)
+    except CalledProcessError as cp:
+        print(f'An error occurred: {cp.returncode}')
+
+def remove_container():
+    container = input('\nEnter the ID of the container: ')
+    try:
+        runSubprocess(f'pipenv run docker rm {container}', 
+                      shell=True, check=True)
+    except CalledProcessError as cp:
+        print(f'An error occurred: {cp.returncode}')
+
+def exec_it():
+    container = input('\nEnter the ID of the container: ')
+    try:
+        runSubprocess(
+            f'pipenv run docker exec -it {container} bash',
+            shell=True,
+            check=True
+        )
+    except CalledProcessError as cp:
+        print(f'An error occurred: {cp.returncode}')
+
+def show_logs():
+    container = input('\nEnter the ID of the container: ')
+    try:
+        runSubprocess(
+            f'pipenv run docker logs {container}',
+            shell=True,
+            check=True
+        )
+    except CalledProcessError as cp:
+        print(f'\nAn error occurred: {cp.returncode}')
+
+def docker_pull():
+    option = ''
+    while option not in ['1', '2', '3']:
+        
+        option = input(
+            '\nOptions:\n'
+            '1. Write only the name of the image\n'
+            '2. Include a tag\n'
+            '3. Include a digest\n'
+            '\n'
+            'Enter your choice: '
+        )
+        if option not in ['1', '2', '3']:
+            print('\nInvalid option\n')
+    
+
+    img = input('Enter the image name: ')
+    if option == '2': 
+        tag = input('Enter the tag of the image: ')
+        try:
+            runSubprocess(
+                f'pipenv run docker pull {img}:{tag}',
+                shell=True,
+                check=True
+            )
+        except CalledProcessError as cp:
+            print(f'An error occurred: {cp.returncode}')
+
+    elif option == '3':
+        digest = input('Enter the digest of the image: ')
+        try:
+            runSubprocess(
+                f'pipenv run docker pull {img}@{digest}',
+                shell=True,
+                check=True
+            )
+        except CalledProcessError as cp:
+            print(f'An error occurred: {cp.returncode}')
+
+    else:
+        try:
+            runSubprocess(
+                f'pipenv run docker pull {img}',
+                shell=True,
+                check=True
+            )
+        except CalledProcessError as cp:
+            print(f'An error occurred: {cp.returncode}')
+
+    
+def compose_up():
+    try:
+        runSubprocess(
+            f'pipenv run docker-compose up',
+            shell=True,
+            check=True
+        )
+    except CalledProcessError as cp:
+        print(f'An error occurred: {cp.returncode}')
+
+def compose_down():
+    try:
+        runSubprocess(
+            'pipenv run docker-compose down',
+            shell=True,
+            check=True
+        )
+    except CalledProcessError as cp:
+        print(f'An error occurred: {cp.returncode}')
+
+def compose_build():
+    try:
+        runSubprocess(
+            'pipenv run docker-compose build',
+            check=True,
+            shell=True
+        )
+    except CalledProcessError as cp:
+        print(f'An error occurred: {cp.returncode}')
+
+def compose_logs():
+    try:
+        runSubprocess(
+            'pipenv run docker-compose logs',
+            shell=True,
+            check=True
+        )
+    except CalledProcessError as cp:
+        print (f'An error occurred: {cp.returncode}')
+
+def compose_ps():
+    try:
+        runSubprocess(
+            'pipenv run docker-compose ps',
+            shell=True,
+            check=True
+        )
+    except CalledProcessError as cp:
+        print (f'An error occurred: {cp.returncode}')
+
+def compose_restart():
+    try:
+        services = []
+        while True:
+            out = input('Enter the amount of containers you want to restart: ')
+            if out.isdigit():
+                break
+        for i in range(int(out)):
+            s = input(f'{i} - Enter the name of the container: ')
+            services.append(s)
+        
+        runSubprocess(            
+            f'pipenv run docker-compose restart {services}',
+            shell=True,
+            check=True
+        )
+    except CalledProcessError as cp:
+        print (f'An error occurred: {cp.returncode}')
+
+def compose_stop():
+    try:
+        runSubprocess(
+            'pipenv run docker-compose stop',
+            shell=True,
+            check=True
+        )
+    except CalledProcessError as cp:
+        print (f'An error occurred: {cp.returncode}')
+
+def compose_start():
+    try:
+        runSubprocess(
+            'pipenv run docker-compose start',
+            shell=True,
+            check=True
+        )
+    except CalledProcessError as cp:
+        print (f'An error occurred: {cp.returncode}')
+
+def compose_exec():
+    service = input('Enter the name of the container: ')
+    try:
+        runSubprocess(
+            f'pipenv run docker-compose exec {service} bash',
+            check=True,
+            shell=True
+        )
+
+    except CalledProcessError as cp:
+        print(f'An error occurred: {cp.returncode}')
+
+def compose_pull():
+    try:
+        runSubprocess(
+        'pipenv run docker-compose pull',
+        shell=True,
+        check=True
+        )
+    except CalledProcessError as cp:
+        print(f'An error occurred: {cp.returncode}')
+
+def manage_compose():
+    print('\n******************************** DOCKER COMPOSE ********************************\n')
+    opt = '1'
+    while opt in ['1', '2', '3', '4', '5', 
+                  '6', '7', '8', '9', '10']:
+        opt = input(
+            '\n'
+            '1. Up docker compose\n'
+            '2. Down docker compose\n'
+            '3. Build docker compose\n'
+            '4. Show the logs of the docker compose\n'
+            '5. Show the containers related with docker compose.yml\n'
+            '6. Restart docker compose\n'
+            '7. Stop docker compose\n'
+            '8. Start docker compose\n'
+            '9. Exec a command in the running container\n'
+            '10. Download the images of the services defined in docker compose.yml\n'
+            '(Other) Exit Docker Compose\n\n'
+            'Enter your choice: '
+        )
+
+        if opt == '1': compose_up()
+        elif opt == '2': compose_down()
+        elif opt == '3': compose_build()
+        elif opt == '4': compose_logs()
+        elif opt == '5': compose_ps()
+        elif opt == '6': compose_restart()
+        elif opt == '7': compose_stop()
+        elif opt == '8': compose_start()
+        elif opt == '9': compose_exec()
+        elif opt == '10': compose_pull()
+
+    print('\n******************************** END DOCKER COMPOSE ********************************\n')
 
 def upload_github():
     try:
         email = getenv("GITHUB_EMAIL", default='default_email')
-        runSubprocess(f'git config --global user.email "{email}"',
+        runSubprocess(f'pipenv run git config --global user.email "{email}"',
                       shell=True, check=True)
         print('\nname')
         username = getenv("GITHUB_USERNAME", default='default_username')
-        runSubprocess(f'git config --global user.name "{username}"',
+        runSubprocess(f'pipenv run git config --global user.name "{username}"',
                       shell=True, check=True)
-        runSubprocess('git init', shell=True, check=True)
+        runSubprocess('pipenv run git init', shell=True, check=True)
         print('\nInitializing Github & git status\n')
-        runSubprocess('git status', shell=True, check=True)
+        runSubprocess('pipenv run git status', shell=True, check=True)
         print('\ngit add .\n')
-        runSubprocess('git add .', shell=True, check=True)
+        runSubprocess('pipenv run git add .', shell=True, check=True)
         commit = input('Enter commit message: ')
-        runSubprocess(f'git commit -m "{commit}"', shell=True, check=True)
+        runSubprocess(f'pipenv run git commit -m "{commit}"', shell=True, check=True)
 
         first_upload = ''
         while first_upload not in ['Y', 'y', 'N', 'n']:
             first_upload = input('Enter if it is your first commit [Y/N]: ')
             if first_upload not in ['Y', 'y', 'N', 'n']:
                 print('\nInvalid option\n')
-        
+        branch = 'main'
+        remote = 'origin'
         if first_upload in ['Y', 'y']:
             branch = input('Enter your branch: ')
-            runSubprocess(f'git branch -M {branch}', shell=True, check=True)
+            runSubprocess(f'pipenv run git branch -M {branch}', shell=True, check=True)
+            remote = input('Enter the remote name: ') #Default: origin
             my_git = input('Enter repository name: ')
             print('\nremote add origin\n')
-            runSubprocess(f'git remote add origin https://github.com/pyCampaDB/{my_git}.git',
+            runSubprocess(f'pipenv run git remote add {remote} https://github.com/pyCampaDB/{my_git}.git',
                 shell=True, check=True, capture_output=True)
-
+        
+        pull = input('Do you want to make a pull? [Y/N]: ')
+        if pull in ['Y', 'y']:
+            print('\npull\n')
+            git_pull(remote, branch)
         print('\npush\n')
-        runSubprocess(f'git push -u origin main', shell=True, check=True)
+        runSubprocess(f'pipenv run git push -u {remote} {branch}', 
+                      shell=True, check=True)
         print('\nProject uploaded to GitHub\n')
     except CalledProcessError as cp:
         print(f'\nCalledProcessError: {cp.returncode}\n')
     except Exception as e:
         print(f'Exeption: {e.__str__}')
 
+def git_remote_v():
+    try:
+        runSubprocess(
+            'pipenv run git remote -v', shell=True, check=True
+        )
+    except CalledProcessError as cp:
+        print(f'An error occurred: {cp.returncode}')
+
+def git_remove_origin():
+    try:
+        runSubprocess(
+            'pipenv run git remote remove origin',
+            shell=True,
+            check=True
+        )
+    except CalledProcessError as cp:
+        print(f'An error occurred: {cp.returncode}')
+
+def git_clone():
+    url = input(
+        'Enter the url of the repository: '
+    )
+    try:
+        runSubprocess(
+            f'pipenv run git clone {url}',
+            shell= True,
+            check=True
+        )
+    except CalledProcessError as cp:
+        print(f'An error occurred: {cp.returncode}')
+
+def git_push_origin():
+    branch = input(
+        'Enter the branch name: '
+    )
+    try:
+        runSubprocess(
+            f'pipenv run git push origin {branch}',
+            shell=True,
+            check=True
+        )
+    except CalledProcessError as cp:
+        print(f'An error occurred: {cp.returncode}')
+
+def git_branch():
+    try:
+        runSubprocess(
+            'pipenv run git branch',
+            shell=True,
+            check=True
+        )
+    except CalledProcessError as cp:
+        print(f'An error occurred: {cp.returncode}')
+
+def git_checkout():
+    try:
+        branch = input('Enter the branch name: ')
+        runSubprocess(
+            f'pipenv run git checkout {branch}',
+            shell=True,
+            check=True
+        )
+    except CalledProcessError as cp:
+        print(f'An error occurred: {cp.returncode}')
+
+def git_merge():
+    try:
+        branch = input('Enter the branch name: ')
+        runSubprocess(
+            f'pipenv run git merge {branch}',
+            shell=True,
+            check=True
+        )
+    except CalledProcessError as cp:
+        print(f'An error occurred: {cp.returncode}')
+
+
+def git_pull(remote=None, branch=None):
+    if remote == None:
+        remote = input('Enter the remote name: ')
+    if branch == None:
+        branch = input('Enter the branch name: ')
+    try:
+        runSubprocess(
+            f'pipenv run git pull {remote} {branch}',
+            shell=True, check=True
+        )
+    except CalledProcessError as cp:
+        print(f'An error occurred: {cp.returncode}')
 
 def cmd():
     command = input(f'{getcwd()}: ')
@@ -246,23 +597,28 @@ def cmd():
     finally:
         return command
 
+
 def run():
     signal(SIGINT, signal_handler)
 
     ensure_pipenv_installed()
     manage_and_use_env()
     option = '1'
-    while option in ['1', '2', '3', '4', '5']:
+    while option in ['1', '2', '3', '4', '5', '6']:
 
-        option = input( '\n1. CMD'
-                        '\n2. Run Script'
-                        '\n3. Settings pipenv'
-                        '\n4. Docker'
-                        '\n5. Upload project to GitHub'
-                        '\n(Other). Exit\n'
-                        '\nEnter your choice: ')
+        option = input( 
+            '\n*********************************** SETUP ***********************************\n\n'
+            '\n1. CMD'
+            '\n2. Run Script'
+            '\n3. Settings pipenv'
+            '\n4. Docker'
+            '\n5. Docker Compose'
+            '\n6. GIT'
+            '\n(Other). Exit\n'
+            '\nEnter your choice: ')
 
         if option == '1':
+            print('\n*********************************** CMD ***********************************\n\n')
             try:
                 while True:
                     a = cmd()
@@ -270,6 +626,9 @@ def run():
                         break                 
             except EOFError:
                 pass
+            finally:
+                print('\n*********************************** EXIT CMD ***********************************\n\n')
+        
         elif option == '2':
             run_script()
 
@@ -298,17 +657,17 @@ def run():
                     delete_pipenv()
                     manage_and_use_env()
                 elif menu=='6': pipenv_run()
-            print('\n***************************************** EXIT DJANGO SETTINGS *****************************************\n')
+            print('\n***************************************** EXIT PIPENV SETTINGS *****************************************\n')
         
     
     
-        elif option in ['4', '5']:
+        elif option in ['4', '5', '6']:
             from dotenv import load_dotenv
             load_dotenv()
             
             if option == '4':
                 docker_option = '1'
-                while docker_option in ['1', '2', '3', '4', '5', '6', '7']:
+                while docker_option in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']:
                     docker_option = input('\n******************** DOCKER: ********************\n'
                                           '1. Upload an image to Docker Hub\n'
                                           '2. Run a docker container\n'
@@ -317,6 +676,10 @@ def run():
                                           '5. Restart docker contaienr\n'
                                           '6. Show the containers executing\n'
                                           '7. Show all containers\n'
+                                          '8. Remove an image\n'
+                                          '9. Remove a container\n'
+                                          '10. Show the container\'s logs\n'
+                                          '11. Access the virtual environment of your container\n'
                                           '(Other) Exit Docker\n\n'
                                           'Enter your choice: ')
                     if docker_option == '1':upload_docker()
@@ -326,20 +689,44 @@ def run():
                     elif docker_option=='5': docker_restart()
                     elif docker_option=='6': docker_ps()
                     elif docker_option=='7': docker_ps_a()
+                    elif docker_option=='8': remove_image()
+                    elif docker_option=='9': remove_container()
+                    elif docker_option=='10': show_logs()
+                    elif docker_option=='11': exec_it()
                     else: print('\n******************** EXIT DOCKER ********************\n')
                 
+            elif option == '5': manage_compose()
 
-            elif option == '5':
-                git_option = '9'
-                while git_option not in ['Y', 'y', 'N', 'n']:
-                    git_option = input('Do you want to upload this project to GitHub? [Y/N]: ')
-                    if git_option not in ['Y', 'y', 'N', 'n']:
-                        print('\nInvalid option\n')
-                if git_option in ['Y', 'y']:
-                    upload_github()
-                else:
-                    print('\nGit pass...\n')
+            elif option == '6':
+                git_option = '1'
+                while git_option in ['1', '2', '3', '4', '5', '6', '7', '8', '9']:
+                    git_option = input(
+                        '\n******************** GIT ********************\n\n'
+                        '1. Upload your project to GitHub\n'
+                        '2. git remote -v\n'
+                        '3. git remote remove origin\n'
+                        '4. git clone\n'
+                        '5. Send local commits to a remote repository\n'
+                        '6. git checkout\n'
+                        '7. git merge\n'
+                        '8. Display the availables local branches of the repository\n'
+                        '9. git pull\n'
+                        '(Other) Exit GIT\n\n'
+                        'Enter your choice: '
+                    )
 
+                    if git_option == '1':
+                        upload_github()
+                    elif git_option == '2': git_remote_v()
+                    elif git_option == '3': git_remove_origin()
+                    elif git_option == '4': git_clone()
+                    elif git_option == '5': git_push_origin()
+                    elif git_option == '6': git_checkout()
+                    elif git_option == '7': git_merge()
+                    elif git_option == '8': git_branch()
+                    elif git_option == '9': git_pull()
+                print('\n******************** EXIT GIT ********************\n\n')
+    print('\n*********************************** EXIT SETUP ***********************************\n\n')
 ############################################# MAIN ##########################################################################
 if __name__ == '__main__':
     run()
